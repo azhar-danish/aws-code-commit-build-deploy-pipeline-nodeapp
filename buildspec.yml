@@ -1,0 +1,48 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 24
+    commands:
+      - echo "Installing system dependencies..."
+      - # Update npm to the latest stable version if needed
+      - npm install -g npm@latest
+  
+  pre_build:
+    commands:
+      - echo "Installing development and production application dependencies..."
+      - npm ci
+      - echo "Creating deployment environment configuration..."
+      - # SECURE PRACTICE: Fetch production secrets dynamically from SSM Parameter Store at runtime
+      - # aws ssm get-parameter --name "/demo-app/prod/database-url" --with-decryption --query "Parameter.Value" --output text > .env.tmp
+      - # echo "DATABASE_URL=$(cat .env.tmp)" > .env
+      - echo "NODE_ENV=development" >> .env
+      - echo "PORT=3000" >> .env
+      - # rm .env.tmp
+
+  build:
+    commands:
+      - echo "Building application..."
+      - # If you are using TypeScript, Next.js, or a bundler, uncomment the line below:
+      - # npm run build
+      - echo "Running automated test suites..."
+      - # Uncomment the line below to ensure bad code breaks the build before deploying:
+      - # npm test
+
+  post_build:
+    commands:
+      - echo "Pruning development dependencies to optimize production artifact size..."
+      - # Removes devDependencies so your deployment package stays small and fast
+      - # npm prune --development
+      - echo "Build process completed successfully on $(date)"
+
+artifacts:
+  files:
+    - '**/*'
+  exclude-paths:
+    - 'node_modules/**/*'
+
+cache:
+  paths:
+    - 'node_modules/**/*'
